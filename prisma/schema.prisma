@@ -7,17 +7,196 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      Role
-  createdAt DateTime @default(now())
+// ─── Тенант (клиника) ────────────────────────────────────────────────────────
+model Tenant {
+  id           String        @id @default(uuid())
+  name         String
+  slug         String        @unique
+  email        String?
+  primaryColor String        @default("#2E75B6")
+  address      String?
+  phone        String?
+  logo         String?
+  createdAt    DateTime      @default(now())
+
+  users         User[]
+  doctors       Doctor[]
+  services      Service[]
+  appointments  Appointment[]
+  subscription  Subscription?
+  usage         Usage[]
+
+  @@index([slug])
 }
 
-enum Role {
-  PATIENT
-  DOCTOR
+// ─── Пользователь (персонал клиники) ─────────────────────────────────────────
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  password      String
+  role          UserRole
+  createdAt     DateTime      @default(now())
+  tenantId      String
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  doctor        Doctor?
+  refreshTokens RefreshToken[]
+
+  @@index([tenantId])
+}
+
+enum UserRole {
+  OWNER
   ADMIN
-  INSURER
+  DOCTOR
+}
+
+// ─── Refresh токены ───────────────────────────────────────────────────────────
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── Врач / специалист ───────────────────────────────────────────────────────
+model Doctor {
+  id           String    @id @default(uuid())
+  name         String
+  email        String?
+  speciality   String?
+  bio          String?
+  avatarUrl    String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  userId       String?   @unique
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  schedules    Schedule[]
+  blocks       ScheduleBlock[]
+  appointments Appointment[]
+  services     Service[]  @relation("DoctorToService")
+
+  @@index([tenantId, isActive])
+}
+
+// ─── Услуга ───────────────────────────────────────────────────────────────────
+model Service {
+  id          String    @id @default(uuid())
+  name        String
+  duration    Int       // минуты
+  price       Int?
+  description String?
+  isActive    Boolean   @default(true)
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  doctors     Doctor[]  @relation("DoctorToService")
+  appointments Appointment[]
+
+  @@index([tenantId])
+}
+
+// ─── Шаблон расписания (по дням недели) ──────────────────────────────────────
+model Schedule {
+  id        String  @id @default(uuid())
+  weekday   Int     // 0=Вс … 6=Сб
+  startTime String  // "09:00"
+  endTime   String  // "18:00"
+  isActive  Boolean @default(true)
+  doctorId  String
+  doctor    Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId])
+}
+
+// ─── Ручная блокировка слотов ─────────────────────────────────────────────────
+model ScheduleBlock {
+  id        String   @id @default(uuid())
+  date      DateTime @db.Date
+  startTime String
+  endTime   String
+  reason    String?
+  doctorId  String
+  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId])
+}
+
+// ─── Запись на приём ──────────────────────────────────────────────────────────
+model Appointment {
+  id              String            @id @default(uuid())
+  startTime       DateTime
+  endTime         DateTime
+  status          AppointmentStatus @default(PENDING)
+  patientName     String
+  patientEmail    String?
+  patientPhone    String?
+  notes           String?
+  cancelToken     String            @unique @default(uuid())
+  reminderSent24h Boolean           @default(false)
+  reminderSent2h  Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  tenantId        String
+  tenant          Tenant            @relation(fields: [tenantId], references: [id])
+  doctorId        String
+  doctor          Doctor            @relation(fields: [doctorId], references: [id])
+  serviceId       String
+  service         Service           @relation(fields: [serviceId], references: [id])
+
+  @@unique([doctorId, startTime])
+  @@index([tenantId])
+  @@index([tenantId, doctorId, startTime])
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED_BY_PATIENT
+  CANCELLED_BY_CLINIC
+  COMPLETED
+  NO_SHOW
+}
+
+// ─── Тарифные планы и подписки ───────────────────────────────────────────────
+model Plan {
+  id               String         @id @default(uuid())
+  name             String
+  price            Int
+  maxDoctors       Int
+  maxAppointments  Int
+  hasWidget        Boolean        @default(false)
+  hasAI            Boolean        @default(false)
+  hasEmail         Boolean        @default(false)
+  subscriptions    Subscription[]
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  status    SubscriptionStatus
+  expiresAt DateTime?
+  tenantId  String             @unique
+  tenant    Tenant             @relation(fields: [tenantId], references: [id])
+  planId    String
+  plan      Plan               @relation(fields: [planId], references: [id])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+}
+
+// ─── Использование (для лимитов по плану) ────────────────────────────────────
+model Usage {
+  id       String @id @default(uuid())
+  month    String // "2025-06"
+  bookings Int    @default(0)
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, month])
 }

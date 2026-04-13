@@ -14,7 +14,7 @@ const Home = ({ searchParams }: SearchParamProps) => {
                         </h1>
 
                         <p className="text-muted-foreground text-base">
-                            Ваш цифровой администратор для медицинских сервисов
+                            Ваш цифровой администратор
                         </p>
                     </div>
 
