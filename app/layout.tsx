@@ -29,10 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             className={cn(geistSans.variable, geistMono.variable, "h-full scroll-smooth")}
         >
         <body
-            className={cn(
-                "min-h-screen font-sans antialiased",
-                "bg-background text-foreground",
-            )}
+            className="min-h-screen font-sans antialiased bg-background text-foreground"
         >
         <ToastProvider>{children}</ToastProvider>
         </body>
