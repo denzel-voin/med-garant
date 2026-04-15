@@ -41,7 +41,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         });
         return NextResponse.json(block, { status: 201 });
     } catch (e) {
-        if (e instanceof z.ZodError) return NextResponse.json({ error: { code: "VALIDATION_ERROR", details: e.errors } }, { status: 400 });
+        if (e instanceof z.ZodError) return NextResponse.json({ error: { code: "VALIDATION_ERROR", details: e.issues } }, { status: 400 });
         const msg = e instanceof Error ? e.message : "";
         if (msg === "UNAUTHORIZED") return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 });
         return NextResponse.json({ error: { code: "SERVER_ERROR" } }, { status: 500 });

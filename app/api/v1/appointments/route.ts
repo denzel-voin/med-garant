@@ -48,7 +48,7 @@ export async function PATCH(
         return NextResponse.json(updated);
     } catch (e: unknown) {
         if (e instanceof z.ZodError) {
-            return NextResponse.json({ error: { code: "VALIDATION_ERROR", details: e.errors } }, { status: 400 });
+            return NextResponse.json({ error: { code: "VALIDATION_ERROR", details: e.issues } }, { status: 400 });
         }
         const msg = e instanceof Error ? e.message : "";
         if (msg === "UNAUTHORIZED") return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 });
