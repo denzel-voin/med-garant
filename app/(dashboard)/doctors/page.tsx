@@ -14,7 +14,7 @@ interface Service { id: string; name: string; duration: number; price?: number |
 interface Schedule { id: string; weekday: number; startTime: string; endTime: string; isActive: boolean }
 interface Doctor {
     id: string; name: string; speciality?: string | null; bio?: string | null;
-    email?: string | null; isActive: boolean;
+    email?: string | null; avatarUrl?: string | null; isActive: boolean;
     services: Service[]; schedules: Schedule[];
 }
 
@@ -28,8 +28,9 @@ export default function DoctorsPage() {
     const [allServices, setAllServices] = useState<Service[]>([]);
     const [loading, setLoading] = useState(true);
     const [modal, setModal] = useState<Modal>(null);
-    const [form, setForm] = useState({ name: "", speciality: "", bio: "", email: "" });
+    const [form, setForm] = useState({ name: "", speciality: "", bio: "", email: "", avatarUrl: "", serviceIds: [] as string[] });
     const [saving, setSaving] = useState(false);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     const [scheduleRows, setScheduleRows] = useState<{ weekday: number; startTime: string; endTime: string; isActive: boolean }[]>(
         Array.from({ length: 7 }, (_, i) => ({ weekday: i, startTime: "09:00", endTime: "18:00", isActive: i >= 1 && i <= 5 }))
@@ -49,11 +50,18 @@ export default function DoctorsPage() {
     useEffect(() => { fetchData(); }, [fetchData]);
 
     function openAdd() {
-        setForm({ name: "", speciality: "", bio: "", email: "" });
+        setForm({ name: "", speciality: "", bio: "", email: "", avatarUrl: "", serviceIds: [] });
         setModal({ mode: "add" });
     }
     function openEdit(d: Doctor) {
-        setForm({ name: d.name, speciality: d.speciality ?? "", bio: d.bio ?? "", email: d.email ?? "" });
+        setForm({
+            name: d.name,
+            speciality: d.speciality ?? "",
+            bio: d.bio ?? "",
+            email: d.email ?? "",
+            avatarUrl: d.avatarUrl ?? "",
+            serviceIds: d.services.map((s) => s.id),
+        });
         setModal({ mode: "edit", doctor: d });
     }
     function openSchedule(d: Doctor) {
@@ -87,6 +95,26 @@ export default function DoctorsPage() {
             }
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function handleAvatarFile(file: File) {
+        const formData = new FormData();
+        formData.append("file", file);
+        setUploadingAvatar(true);
+        try {
+            const res = await fetch("/api/v1/uploads", { method: "POST", body: formData });
+            const data = await res.json();
+            if (!res.ok) {
+                toast(data.error?.message ?? "Ошибка загрузки файла", "error");
+                return;
+            }
+            setForm((f) => ({ ...f, avatarUrl: data.url ?? "" }));
+            toast("Фото загружено", "success");
+        } catch {
+            toast("Ошибка загрузки файла", "error");
+        } finally {
+            setUploadingAvatar(false);
         }
     }
 
@@ -135,8 +163,12 @@ export default function DoctorsPage() {
                     {doctors.map((d) => (
                         <Card key={d.id} className={!d.isActive ? "opacity-60" : ""}>
                             <CardContent className="p-4 flex items-center gap-3">
-                                <div className="size-10 rounded-xl bg-muted flex items-center justify-center shrink-0 text-lg">
-                                    👤
+                                <div className="size-10 rounded-xl bg-muted flex items-center justify-center shrink-0 text-lg overflow-hidden">
+                                    {d.avatarUrl ? (
+                                        <img src={d.avatarUrl} alt={d.name} className="size-full object-cover" />
+                                    ) : (
+                                        "👤"
+                                    )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
@@ -182,11 +214,73 @@ export default function DoctorsPage() {
                             <div className="space-y-1"><Label>ФИО *</Label><Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Иванова Мария Петровна" /></div>
                             <div className="space-y-1"><Label>Специальность</Label><Input value={form.speciality} onChange={(e) => setForm((f) => ({ ...f, speciality: e.target.value }))} placeholder="Косметолог, Стоматолог…" /></div>
                             <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="doctor@clinic.ru" /></div>
+                            <div className="space-y-1">
+                                <Label>Фото специалиста</Label>
+                                <Input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleAvatarFile(file);
+                                    }}
+                                />
+                                <p className="text-xs text-muted-foreground">JPG, PNG или WEBP, до 5 МБ</p>
+                                {uploadingAvatar && (
+                                    <p className="text-xs text-muted-foreground">Загружаем фото...</p>
+                                )}
+                                {form.avatarUrl && (
+                                    <div className="pt-2 flex items-center gap-2">
+                                        <img
+                                            src={form.avatarUrl}
+                                            alt="Предпросмотр"
+                                            className="size-16 rounded-xl border border-border object-cover"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setForm((f) => ({ ...f, avatarUrl: "" }))}
+                                        >
+                                            Удалить фото
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
                             <div className="space-y-1"><Label>Описание</Label><Textarea value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} placeholder="Краткое описание специалиста..." rows={2} /></div>
+                            <div className="space-y-2">
+                                <Label>Услуги специалиста</Label>
+                                {allServices.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">Сначала добавьте услуги в разделе "Услуги".</p>
+                                ) : (
+                                    <div className="max-h-40 overflow-y-auto rounded-xl border border-border p-2 space-y-1.5">
+                                        {allServices.map((service) => {
+                                            const checked = form.serviceIds.includes(service.id);
+                                            return (
+                                                <label key={service.id} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-muted/50 cursor-pointer">
+                                                    <span className="text-sm">{service.name}</span>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="accent-primary"
+                                                        checked={checked}
+                                                        onChange={(e) =>
+                                                            setForm((f) => ({
+                                                                ...f,
+                                                                serviceIds: e.target.checked
+                                                                    ? [...f.serviceIds, service.id]
+                                                                    : f.serviceIds.filter((id) => id !== service.id),
+                                                            }))
+                                                        }
+                                                    />
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="flex gap-2 pt-2">
                             <Button variant="outline" className="flex-1" onClick={() => setModal(null)}>Отмена</Button>
-                            <Button className="flex-1" onClick={handleSave} disabled={saving || !form.name.trim()}>{saving ? "Сохраняем..." : "Сохранить"}</Button>
+                            <Button className="flex-1" onClick={handleSave} disabled={saving || uploadingAvatar || !form.name.trim()}>{saving ? "Сохраняем..." : "Сохранить"}</Button>
                         </div>
                     </div>
                 </div>

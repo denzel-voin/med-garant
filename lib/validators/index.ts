@@ -15,6 +15,10 @@ export const doctorSchema = z.object({
     speciality: z.string().min(2).optional(),
     bio: z.string().max(500).optional(),
     email: z.string().email().optional().or(z.literal("")),
+    avatarUrl: z
+        .string()
+        .optional()
+        .refine((v) => !v || v.startsWith("/") || /^https?:\/\//.test(v), "Неверный формат фото"),
 });
 
 export const serviceSchema = z.object({

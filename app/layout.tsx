@@ -26,9 +26,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <html
             lang="ru"
             suppressHydrationWarning
+            data-scroll-behavior="smooth"
             className={cn(geistSans.variable, geistMono.variable, "h-full scroll-smooth")}
         >
         <body
+            suppressHydrationWarning
             className="min-h-screen font-sans antialiased bg-background text-foreground"
         >
         <ToastProvider>{children}</ToastProvider>

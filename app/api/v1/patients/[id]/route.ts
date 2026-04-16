@@ -9,12 +9,26 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         const ctx = getTenantContext(req);
         const { id } = await params;
         const { notes } = await req.json();
+        const decoded = Buffer.from(id, "base64url").toString("utf8");
+        const [patientName, patientPhone, patientEmail] = decoded.split("::");
+        if (!patientName) return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 });
 
-        const patient = await prisma.patient.findFirst({ where: { id, tenantId: ctx.tenantId } });
-        if (!patient) return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 });
+        const where = {
+            tenantId: ctx.tenantId,
+            patientName,
+            patientPhone: patientPhone || null,
+            patientEmail: patientEmail || null,
+        };
 
-        const updated = await prisma.patient.update({ where: { id }, data: { notes } });
-        return NextResponse.json(updated);
+        const latest = await prisma.appointment.findFirst({
+            where,
+            orderBy: { createdAt: "desc" },
+            select: { id: true },
+        });
+        if (!latest) return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 });
+
+        await prisma.appointment.update({ where: { id: latest.id }, data: { notes: notes ?? null } });
+        return NextResponse.json({ ok: true });
     } catch (e) {
         const msg = e instanceof Error ? e.message : "";
         if (msg === "UNAUTHORIZED") return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 });

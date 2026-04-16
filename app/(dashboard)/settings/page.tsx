@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
+import { YandexAddressPicker } from "@/components/maps/YandexAddressPicker";
+
+declare global {
+    interface Window {
+        ymaps?: any;
+    }
+}
 
 interface TenantSettings {
     id: string;
@@ -14,6 +21,8 @@ interface TenantSettings {
     slug: string;
     email: string | null;
     address: string | null;
+    latitude: number | null;
+    longitude: number | null;
     phone: string | null;
     logo: string | null;
     primaryColor: string;
@@ -29,10 +38,15 @@ export default function SettingsPage() {
     const [settings, setSettings] = useState<TenantSettings | null>(null);
     const [form, setForm] = useState({
         name: "", address: "", phone: "", logo: "", primaryColor: "#2E75B6",
+        latitude: null as number | null,
+        longitude: null as number | null,
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
+    const [addressToLocate, setAddressToLocate] = useState("");
 
     useEffect(() => {
         fetch("/api/v1/settings")
@@ -42,13 +56,36 @@ export default function SettingsPage() {
                 setForm({
                     name: data.name,
                     address: data.address ?? "",
+                    latitude: data.latitude ?? null,
+                    longitude: data.longitude ?? null,
                     phone: data.phone ?? "",
                     logo: data.logo ?? "",
                     primaryColor: data.primaryColor,
                 });
+                if (data.address) setAddressToLocate(data.address);
             })
             .finally(() => setLoading(false));
     }, []);
+
+    useEffect(() => {
+        if (typeof window === "undefined" || !window.ymaps) return;
+        if (form.address.trim().length < 3) {
+            setAddressSuggestions([]);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const res = await window.ymaps.suggest(form.address);
+                const values = (res ?? []).map((x: { value?: string }) => x.value).filter(Boolean) as string[];
+                setAddressSuggestions(values.slice(0, 5));
+            } catch {
+                setAddressSuggestions([]);
+            }
+        }, 250);
+
+        return () => clearTimeout(timer);
+    }, [form.address]);
 
     async function handleSave(e: React.FormEvent) {
         e.preventDefault();
@@ -69,6 +106,30 @@ export default function SettingsPage() {
             }
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function handleLogoUpload(file: File) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("kind", "logo");
+        setUploadingLogo(true);
+        try {
+            const res = await fetch("/api/v1/uploads", {
+                method: "POST",
+                body: formData,
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                toast(data.error?.message ?? "Ошибка загрузки логотипа", "error");
+                return;
+            }
+            setForm((f) => ({ ...f, logo: data.url ?? "" }));
+            toast("Логотип загружен", "success");
+        } catch {
+            toast("Ошибка загрузки логотипа", "error");
+        } finally {
+            setUploadingLogo(false);
         }
     }
 
@@ -143,22 +204,86 @@ export default function SettingsPage() {
                             </div>
                             <div className="space-y-1.5">
                                 <Label>Адрес</Label>
-                                <Input
-                                    placeholder="ул. Ленина, 1"
-                                    value={form.address}
-                                    onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-                                />
+                                <div className="relative">
+                                    <Input
+                                        placeholder="ул. Ленина, 1"
+                                        value={form.address}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setForm((f) => ({ ...f, address: value }));
+                                        }}
+                                        onBlur={() => {
+                                            setTimeout(() => setAddressSuggestions([]), 120);
+                                        }}
+                                    />
+                                    {addressSuggestions.length > 0 && (
+                                        <div className="absolute z-30 mt-1 w-full rounded-xl border border-border bg-popover shadow-lg overflow-hidden">
+                                            {addressSuggestions.map((item) => (
+                                                <button
+                                                    key={item}
+                                                    type="button"
+                                                    className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        setForm((f) => ({ ...f, address: item }));
+                                                        setAddressToLocate(item);
+                                                        setAddressSuggestions([]);
+                                                    }}
+                                                >
+                                                    {item}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
+                        <YandexAddressPicker
+                            latitude={form.latitude}
+                            longitude={form.longitude}
+                            addressToLocate={addressToLocate}
+                            onPick={({ latitude, longitude, address }) =>
+                                setForm((f) => ({
+                                    ...f,
+                                    latitude,
+                                    longitude,
+                                    address: address ?? f.address,
+                                }))
+                            }
+                        />
+
                         <div className="space-y-1.5">
-                            <Label>URL логотипа</Label>
+                            <Label>Логотип клиники</Label>
                             <Input
-                                type="url"
-                                placeholder="https://..."
-                                value={form.logo}
-                                onChange={(e) => setForm((f) => ({ ...f, logo: e.target.value }))}
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleLogoUpload(file);
+                                }}
                             />
+                            <p className="text-xs text-muted-foreground">JPG, PNG или WEBP, до 5 МБ</p>
+                            {uploadingLogo && (
+                                <p className="text-xs text-muted-foreground">Загружаем логотип...</p>
+                            )}
+                            {form.logo && (
+                                <div className="pt-2 flex items-center gap-2">
+                                    <img
+                                        src={form.logo}
+                                        alt="Логотип клиники"
+                                        className="size-14 rounded-lg border border-border object-cover bg-muted"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setForm((f) => ({ ...f, logo: "" }))}
+                                    >
+                                        Удалить
+                                    </Button>
+                                </div>
+                            )}
                         </div>
 
                         <div className="space-y-1.5">
@@ -199,7 +324,7 @@ export default function SettingsPage() {
                                     Открыть страницу записи
                                 </a>
                             )}
-                            <Button type="submit" disabled={saving} className="ml-auto">
+                            <Button type="submit" disabled={saving || uploadingLogo} className="ml-auto">
                                 {saving ? "Сохраняем..." : "Сохранить"}
                             </Button>
                         </div>

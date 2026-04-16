@@ -58,7 +58,7 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
         const doc = doctors.find((d) => d.id === doctorId);
         if (doc) {
             setSelectedDoctor(doc);
-            if (doc.services.length === 1) setSelectedService(doc.services[0]);
+            setSelectedService(doc.services[0] ?? null);
         }
     }
 
@@ -230,12 +230,18 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
                                 selectedService={selectedDoctor?.id === doc.id ? selectedService : null}
                                 onSelect={(d) => {
                                     setSelectedDoctor(d);
-                                    setSelectedService(d.services.length === 1 ? d.services[0] : null);
+                                    setSelectedService(d.services[0] ?? null);
                                 }}
                                 onServiceSelect={setSelectedService}
                             />
                         ))}
                     </div>
+
+                    {selectedDoctor && selectedDoctor.services.length === 0 && (
+                        <p className="text-sm text-amber-700 bg-amber-50 dark:bg-amber-950/30 rounded-xl px-3 py-2">
+                            У выбранного специалиста пока нет активных услуг. Добавьте услугу в панели администратора.
+                        </p>
+                    )}
 
                     <Button
                         className="w-full"

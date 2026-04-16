@@ -15,6 +15,8 @@ model Tenant {
   email        String?
   primaryColor String        @default("#2E75B6")
   address      String?
+  latitude     Float?
+  longitude    Float?
   phone        String?
   logo         String?
   createdAt    DateTime      @default(now())

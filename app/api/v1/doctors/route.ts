@@ -4,13 +4,17 @@ import { prisma } from "@/lib/db";
 import { getTenantContext } from "@/lib/api-helpers";
 import { doctorSchema } from "@/lib/validators";
 
+const doctorWithServicesSchema = doctorSchema.extend({
+    serviceIds: z.array(z.string().uuid()).optional(),
+});
+
 export async function GET(req: NextRequest) {
     try {
         const ctx = getTenantContext(req);
         const doctors = await prisma.doctor.findMany({
             where: { tenantId: ctx.tenantId },
             include: {
-                services: { where: { isActive: true }, select: { id: true, name: true, duration: true, price: true } },
+                services: { select: { id: true, name: true, duration: true, price: true } },
                 schedules: true,
             },
             orderBy: { name: "asc" },
@@ -30,10 +34,20 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: { code: "FORBIDDEN" } }, { status: 403 });
         }
         const body = await req.json();
-        const data = doctorSchema.parse(body);
+        const { serviceIds = [], ...data } = doctorWithServicesSchema.parse(body);
+        const services = serviceIds.length
+            ? await prisma.service.findMany({
+                where: { tenantId: ctx.tenantId, id: { in: serviceIds } },
+                select: { id: true },
+            })
+            : [];
 
         const doctor = await prisma.doctor.create({
-            data: { ...data, tenantId: ctx.tenantId },
+            data: {
+                ...data,
+                tenantId: ctx.tenantId,
+                services: services.length ? { connect: services.map((s) => ({ id: s.id })) } : undefined,
+            },
         });
         return NextResponse.json(doctor, { status: 201 });
     } catch (e) {

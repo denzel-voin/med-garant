@@ -1,49 +1,107 @@
 import Link from "next/link";
+import { prisma } from "@/lib/db";
+import { HomeCatalog } from "@/components/home/HomeCatalog";
 
-const Home = ({ searchParams }: SearchParamProps) => {
-    return (
-        <div className="flex min-h-screen items-center justify-center">
-
-            <section className="w-full max-w-md">
-
-                <div className="space-y-8">
-
-                    <div className="space-y-3">
-                        <h1 className="text-4xl font-semibold tracking-tight">
-                            МедГарант
-                        </h1>
-
-                        <p className="text-muted-foreground text-base">
-                            Ваш цифровой администратор
-                        </p>
-                    </div>
-
-                    <div className="space-y-3">
-                        <button className="w-full rounded-2xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]">
-                            Начать
-                        </button>
-
-                        <button className="w-full rounded-2xl border border-border bg-transparent px-4 py-3 text-sm font-medium transition hover:bg-accent">
-                            Узнать больше
-                        </button>
-                    </div>
-
-                </div>
-
-                <div className="mt-20 flex items-center justify-between text-sm text-muted-foreground">
-                    <p>© {new Date().getFullYear()} МедГарант</p>
-
-                    <Link
-                        href="/?admin=true"
-                        className="transition hover:text-foreground"
-                    >
-                        Администратор
-                    </Link>
-                </div>
-
-            </section>
-        </div>
-    );
+type HomeProps = {
+    searchParams?: Promise<{ view?: string }>;
 };
 
-export default Home;
+export default async function Home({ searchParams }: HomeProps) {
+    const params = (await searchParams) ?? {};
+    const view = params.view === "doctors" ? "doctors" : "clinics";
+
+    let tenants: Array<{
+        id: string;
+        name: string;
+        slug: string;
+        address: string | null;
+        latitude?: number | null;
+        longitude?: number | null;
+        phone: string | null;
+        doctors: Array<{
+            id: string;
+            name: string;
+            speciality: string | null;
+            services: Array<{ id: string }>;
+        }>;
+    }> = [];
+
+    try {
+        tenants = await prisma.tenant.findMany({
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                address: true,
+                latitude: true,
+                longitude: true,
+                phone: true,
+                doctors: {
+                    where: { isActive: true },
+                    select: {
+                        id: true,
+                        name: true,
+                        speciality: true,
+                        services: {
+                            where: { isActive: true },
+                            select: { id: true },
+                        },
+                    },
+                    orderBy: { name: "asc" },
+                },
+            },
+            orderBy: { name: "asc" },
+        });
+    } catch {
+        // Backward compatibility while DB/Prisma client is not migrated yet.
+        tenants = await prisma.tenant.findMany({
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                address: true,
+                phone: true,
+                doctors: {
+                    where: { isActive: true },
+                    select: {
+                        id: true,
+                        name: true,
+                        speciality: true,
+                        services: {
+                            where: { isActive: true },
+                            select: { id: true },
+                        },
+                    },
+                    orderBy: { name: "asc" },
+                },
+            },
+            orderBy: { name: "asc" },
+        });
+    }
+
+    const clinics = tenants
+        .map((t) => ({
+            ...t,
+            doctors: t.doctors
+                .filter((d) => d.services.length > 0)
+                .map((d) => ({
+                    id: d.id,
+                    name: d.name,
+                    speciality: d.speciality,
+                    servicesCount: d.services.length,
+                })),
+        }))
+        .filter((t) => t.doctors.length > 0);
+
+    return (
+        <main className="min-h-screen bg-background">
+            <HomeCatalog initialView={view} clinics={clinics} />
+            <section className="mx-auto max-w-5xl px-4 pb-8 flex items-center justify-between text-sm text-muted-foreground">
+                <p>© {new Date().getFullYear()} МедГарант</p>
+                <Link href="/login" className="hover:text-foreground transition">
+                    Администратор
+                </Link>
+            </section>
+        </main>
+    );
+}

@@ -5,6 +5,10 @@ import { getTenantContext } from "@/lib/api-helpers";
 import { doctorSchema } from "@/lib/validators";
 import { sendCancellationEmail } from "@/lib/email";
 
+const doctorWithServicesSchema = doctorSchema.extend({
+    serviceIds: z.array(z.string().uuid()).optional(),
+});
+
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, { params }: Params) {
@@ -14,7 +18,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         const doctor = await prisma.doctor.findFirst({
             where: { id, tenantId: ctx.tenantId },
             include: {
-                services: { where: { isActive: true } },
+                services: true,
                 schedules: true,
                 blocks: { where: { date: { gte: new Date() } } },
             },
@@ -34,12 +38,23 @@ export async function PUT(req: NextRequest, { params }: Params) {
         if (!["OWNER", "ADMIN"].includes(ctx.role)) return NextResponse.json({ error: { code: "FORBIDDEN" } }, { status: 403 });
         const { id } = await params;
         const body = await req.json();
-        const data = doctorSchema.parse(body);
+        const { serviceIds = [], ...data } = doctorWithServicesSchema.parse(body);
 
         const doctor = await prisma.doctor.findFirst({ where: { id, tenantId: ctx.tenantId } });
         if (!doctor) return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 });
 
-        const updated = await prisma.doctor.update({ where: { id }, data });
+        const services = await prisma.service.findMany({
+            where: { tenantId: ctx.tenantId, id: { in: serviceIds } },
+            select: { id: true },
+        });
+
+        const updated = await prisma.doctor.update({
+            where: { id },
+            data: {
+                ...data,
+                services: { set: services.map((s) => ({ id: s.id })) },
+            },
+        });
         return NextResponse.json(updated);
     } catch (e) {
         if (e instanceof z.ZodError) return NextResponse.json({ error: { code: "VALIDATION_ERROR", details: e.issues } }, { status: 400 });

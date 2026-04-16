@@ -7,8 +7,8 @@ const ACCESS_SECRET = new TextEncoder().encode(
 
 const PUBLIC_PATHS = [
     "/",
-    "/auth/login",
-    "/auth/register",
+    "/login",
+    "/register",
 ];
 
 function isPublicApi(pathname: string): boolean {
@@ -27,7 +27,7 @@ export async function middleware(req: NextRequest) {
 
     if (isPublicApi(pathname)) return NextResponse.next();
 
-    if (pathname.startsWith("/widget/") || pathname.match(/^\/[a-z0-9-]+$/)) {
+    if (pathname.startsWith("/widget/") || pathname.startsWith("/uploads/") || pathname.match(/^\/[a-z0-9-]+$/)) {
         return NextResponse.next();
     }
 
@@ -37,7 +37,7 @@ export async function middleware(req: NextRequest) {
         if (pathname.startsWith("/api/")) {
             return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Not authenticated" } }, { status: 401 });
         }
-        return NextResponse.redirect(new URL("/auth/login", req.url));
+        return NextResponse.redirect(new URL("/login", req.url));
     }
 
     try {
@@ -51,12 +51,12 @@ export async function middleware(req: NextRequest) {
         if (pathname.startsWith("/api/")) {
             return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Invalid token" } }, { status: 401 });
         }
-        return NextResponse.redirect(new URL("/auth/login", req.url));
+        return NextResponse.redirect(new URL("/login", req.url));
     }
 }
 
 export const config = {
     matcher: [
-        "/((?!_next/static|_next/image|favicon.ico|public).*)",
+        "/((?!_next/static|_next/image|favicon.ico|public|uploads).*)",
     ],
 };

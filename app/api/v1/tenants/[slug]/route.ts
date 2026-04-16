@@ -25,7 +25,6 @@ export async function GET(
                     bio: true,
                     avatarUrl: true,
                     services: {
-                        where: { isActive: true },
                         select: { id: true, name: true, duration: true, price: true },
                     },
                 },
