@@ -9,39 +9,41 @@ datasource db {
 
 // ─── Тенант (клиника) ────────────────────────────────────────────────────────
 model Tenant {
-  id           String        @id @default(uuid())
+  id           String   @id @default(uuid())
   name         String
-  slug         String        @unique
+  slug         String   @unique
   email        String?
-  primaryColor String        @default("#2E75B6")
+  primaryColor String   @default("#2E75B6")
   address      String?
   latitude     Float?
   longitude    Float?
   phone        String?
   logo         String?
-  createdAt    DateTime      @default(now())
+  createdAt    DateTime @default(now())
 
-  users         User[]
-  doctors       Doctor[]
-  services      Service[]
-  appointments  Appointment[]
-  subscription  Subscription?
-  usage         Usage[]
+  users        User[]
+  doctors      Doctor[]
+  services     Service[]
+  appointments Appointment[]
+  subscription Subscription?
+  usage        Usage[]
 
   @@index([slug])
 }
 
 // ─── Пользователь (персонал клиники) ─────────────────────────────────────────
 model User {
-  id            String        @id @default(uuid())
-  email         String        @unique
-  password      String
-  role          UserRole
-  createdAt     DateTime      @default(now())
-  tenantId      String
-  tenant        Tenant        @relation(fields: [tenantId], references: [id])
-  doctor        Doctor?
-  refreshTokens RefreshToken[]
+  id                    String          @id @default(uuid())
+  email                 String          @unique
+  password              String
+  role                  UserRole
+  createdAt             DateTime        @default(now())
+  tenantId              String
+  tenant                Tenant          @relation(fields: [tenantId], references: [id])
+  doctor                Doctor?
+  refreshTokens         RefreshToken[]
+  patientProfile        PatientProfile?
+  appointmentsAsPatient Appointment[]
 
   @@index([tenantId])
 }
@@ -50,6 +52,40 @@ enum UserRole {
   OWNER
   ADMIN
   DOCTOR
+  PATIENT
+}
+
+// ─── Профиль пациента ──────────────────────
+model PatientProfile {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName  String
+  phone     String?
+  birthDate DateTime? @db.Date
+  createdAt DateTime  @default(now())
+
+  reviews DoctorReview[]
+}
+
+// ─── Отзыв на врача ──────────────────────────────────────────────────────────
+model DoctorReview {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  doctorId String
+  doctor   Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  patientProfileId String
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id], onDelete: Cascade)
+
+  appointmentId String?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([doctorId])
+  @@index([patientProfileId])
 }
 
 // ─── Refresh токены ───────────────────────────────────────────────────────────
@@ -66,37 +102,38 @@ model RefreshToken {
 
 // ─── Врач / специалист ───────────────────────────────────────────────────────
 model Doctor {
-  id           String    @id @default(uuid())
+  id           String          @id @default(uuid())
   name         String
   email        String?
   speciality   String?
   bio          String?
   avatarUrl    String?
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
   tenantId     String
-  tenant       Tenant    @relation(fields: [tenantId], references: [id])
-  userId       String?   @unique
-  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tenant       Tenant          @relation(fields: [tenantId], references: [id])
+  userId       String?         @unique
+  user         User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
   schedules    Schedule[]
   blocks       ScheduleBlock[]
   appointments Appointment[]
-  services     Service[]  @relation("DoctorToService")
+  services     Service[]       @relation("DoctorToService")
+  reviews      DoctorReview[]
 
   @@index([tenantId, isActive])
 }
 
 // ─── Услуга ───────────────────────────────────────────────────────────────────
 model Service {
-  id          String    @id @default(uuid())
-  name        String
-  duration    Int       // минуты
-  price       Int?
-  description String?
-  isActive    Boolean   @default(true)
-  tenantId    String
-  tenant      Tenant    @relation(fields: [tenantId], references: [id])
-  doctors     Doctor[]  @relation("DoctorToService")
+  id           String        @id @default(uuid())
+  name         String
+  duration     Int // минуты
+  price        Int?
+  description  String?
+  isActive     Boolean       @default(true)
+  tenantId     String
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  doctors      Doctor[]      @relation("DoctorToService")
   appointments Appointment[]
 
   @@index([tenantId])
@@ -105,9 +142,9 @@ model Service {
 // ─── Шаблон расписания (по дням недели) ──────────────────────────────────────
 model Schedule {
   id        String  @id @default(uuid())
-  weekday   Int     // 0=Вс … 6=Сб
-  startTime String  // "09:00"
-  endTime   String  // "18:00"
+  weekday   Int // 0=Вс … 6=Сб
+  startTime String // "09:00"
+  endTime   String // "18:00"
   isActive  Boolean @default(true)
   doctorId  String
   doctor    Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
@@ -148,6 +185,9 @@ model Appointment {
   doctor          Doctor            @relation(fields: [doctorId], references: [id])
   serviceId       String
   service         Service           @relation(fields: [serviceId], references: [id])
+  review          DoctorReview?
+  patientUserId   String?
+  patientUser     User?             @relation(fields: [patientUserId], references: [id], onDelete: SetNull)
 
   @@unique([doctorId, startTime])
   @@index([tenantId])
@@ -165,15 +205,15 @@ enum AppointmentStatus {
 
 // ─── Тарифные планы и подписки ───────────────────────────────────────────────
 model Plan {
-  id               String         @id @default(uuid())
-  name             String
-  price            Int
-  maxDoctors       Int
-  maxAppointments  Int
-  hasWidget        Boolean        @default(false)
-  hasAI            Boolean        @default(false)
-  hasEmail         Boolean        @default(false)
-  subscriptions    Subscription[]
+  id              String         @id @default(uuid())
+  name            String
+  price           Int
+  maxDoctors      Int
+  maxAppointments Int
+  hasWidget       Boolean        @default(false)
+  hasAI           Boolean        @default(false)
+  hasEmail        Boolean        @default(false)
+  subscriptions   Subscription[]
 }
 
 model Subscription {

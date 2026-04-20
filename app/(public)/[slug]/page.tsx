@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { MapPin, Phone, Clock } from "lucide-react";
 import { BookingWizard } from "@/components/booking/BookingWizard";
+import { DoctorsWithReviews } from "@/components/reviews/DoctorsWithReviews";
 
 interface Props {
     params: Promise<{ slug: string }>;
@@ -26,23 +27,16 @@ export default async function ClinicPage({ params }: Props) {
     const tenant = await prisma.tenant.findUnique({
         where: { slug },
         select: {
-            id: true,
-            name: true,
-            address: true,
-            phone: true,
-            logo: true,
-            primaryColor: true,
+            id: true, name: true, address: true, phone: true, logo: true, primaryColor: true,
             doctors: {
                 where: { isActive: true },
                 select: {
-                    id: true,
-                    name: true,
-                    speciality: true,
-                    bio: true,
-                    avatarUrl: true,
+                    id: true, name: true, speciality: true, bio: true, avatarUrl: true,
                     services: {
+                        where: { isActive: true },
                         select: { id: true, name: true, duration: true, price: true },
                     },
+                    reviews: { select: { rating: true } },
                 },
                 orderBy: { name: "asc" },
             },
@@ -51,6 +45,15 @@ export default async function ClinicPage({ params }: Props) {
 
     if (!tenant) notFound();
 
+    const doctorsWithRating = tenant.doctors.map((d) => ({
+        ...d,
+        averageRating:
+            d.reviews.length > 0
+                ? Math.round((d.reviews.reduce((s, r) => s + r.rating, 0) / d.reviews.length) * 10) / 10
+                : null,
+        reviewCount: d.reviews.length,
+    }));
+
     return (
         <div className="min-h-screen bg-background">
             <header className="border-b border-border bg-card/80 backdrop-blur sticky top-0 z-10">
@@ -58,9 +61,7 @@ export default async function ClinicPage({ params }: Props) {
                     {tenant.logo ? (
                         <img src={tenant.logo} alt={tenant.name} className="size-10 rounded-xl object-cover" />
                     ) : (
-                        <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-xl">
-                            🏥
-                        </div>
+                        <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-xl">🏥</div>
                     )}
                     <div>
                         <h1 className="font-semibold text-base leading-tight">{tenant.name}</h1>
@@ -71,10 +72,7 @@ export default async function ClinicPage({ params }: Props) {
                         )}
                     </div>
                     {tenant.phone && (
-                        <a
-                            href={`tel:${tenant.phone}`}
-                            className="ml-auto flex items-center gap-1.5 text-sm font-medium hover:opacity-80"
-                        >
+                        <a href={`tel:${tenant.phone}`} className="ml-auto flex items-center gap-1.5 text-sm font-medium hover:opacity-80">
                             <Phone className="size-4" />
                             <span className="hidden sm:block">{tenant.phone}</span>
                         </a>
@@ -82,7 +80,7 @@ export default async function ClinicPage({ params }: Props) {
                 </div>
             </header>
 
-            <main className="mx-auto max-w-2xl px-4 py-6">
+            <main className="mx-auto max-w-2xl px-4 py-6 space-y-10">
                 {tenant.doctors.length === 0 ? (
                     <div className="text-center py-16 text-muted-foreground">
                         <Clock className="size-10 mx-auto mb-3 opacity-40" />
@@ -96,18 +94,20 @@ export default async function ClinicPage({ params }: Props) {
                     </div>
                 ) : (
                     <>
-                        <div className="mb-6">
-                            <h2 className="text-xl font-semibold">Онлайн запись</h2>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                Выберите специалиста, удобное время и оставьте контактные данные
-                            </p>
-                        </div>
+                        <section>
+                            <div className="mb-6">
+                                <h2 className="text-xl font-semibold">Онлайн запись</h2>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Выберите специалиста, удобное время и оставьте контактные данные
+                                </p>
+                            </div>
+                            <BookingWizard slug={slug} doctors={doctorsWithRating} primaryColor={tenant.primaryColor} />
+                        </section>
 
-                        <BookingWizard
-                            slug={slug}
-                            doctors={tenant.doctors}
-                            primaryColor={tenant.primaryColor}
-                        />
+                        <section>
+                            <h2 className="text-xl font-semibold mb-4">Отзывы о специалистах</h2>
+                            <DoctorsWithReviews doctors={doctorsWithRating} />
+                        </section>
                     </>
                 )}
             </main>
@@ -115,6 +115,10 @@ export default async function ClinicPage({ params }: Props) {
             <footer className="mt-12 py-6 border-t border-border text-center text-xs text-muted-foreground">
                 Запись работает на платформе{" "}
                 <span className="font-medium text-foreground">МедГарант</span>
+                {" · "}
+                <a href="/login-patient" className="underline underline-offset-2 hover:text-foreground">
+                    Личный кабинет пациента
+                </a>
             </footer>
         </div>
     );

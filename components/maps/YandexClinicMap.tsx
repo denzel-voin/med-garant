@@ -86,14 +86,36 @@ export function YandexClinicMap({ clinics }: { clinics: Clinic[] }) {
     const hasCoords = clinics.some((c) => c.latitude != null && c.longitude != null);
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-3">
             <YandexMapScript />
+
             {!hasCoords ? (
-                <p className="text-sm text-muted-foreground">
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500">
                     Для отображения карты укажите координаты клиник в настройках.
-                </p>
+                </div>
             ) : (
-                <div ref={containerRef} className="h-80 w-full rounded-2xl border border-border overflow-hidden" />
+                <div
+                    className="
+                    relative
+                    h-80 w-full
+                    overflow-hidden
+                    rounded-3xl
+                    border border-neutral-200
+                    bg-white/70
+                    shadow-[0_8px_30px_rgba(0,0,0,0.06)]
+                    backdrop-blur
+                    transition-all
+                    duration-300
+                    hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)]
+                "
+                >
+                    <div
+                        ref={containerRef}
+                        className="absolute inset-0"
+                    />
+
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 to-transparent" />
+                </div>
             )}
         </div>
     );

@@ -90,7 +90,6 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
         setError("");
 
         try {
-            // Combine date + slot time → ISO string
             const [h, m] = selectedSlot.startTime.split(":").map(Number);
             const dt = new Date(selectedDate);
             dt.setHours(h, m, 0, 0);
@@ -98,6 +97,7 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
             const res = await fetch(`/api/v1/tenants/${slug}/appointments`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",   // send cookies so server can read access_token
                 body: JSON.stringify({
                     doctorId: selectedDoctor.id,
                     serviceId: selectedService.id,
@@ -106,6 +106,7 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
                     patientPhone: form.phone || undefined,
                     patientEmail: form.email || undefined,
                     notes: form.notes || undefined,
+                    linkToPatientAccount: true,
                 }),
             });
 
@@ -294,7 +295,6 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
                         <ArrowLeft className="size-4" /> Назад
                     </button>
 
-                    {/* Summary */}
                     <div className="rounded-2xl border border-border p-3 text-sm space-y-0.5">
                         <p><span className="text-muted-foreground">Врач: </span><strong>{selectedDoctor?.name}</strong></p>
                         <p><span className="text-muted-foreground">Услуга: </span>{selectedService?.name}</p>
