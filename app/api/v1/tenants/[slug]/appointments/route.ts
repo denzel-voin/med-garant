@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { verifyAccessToken } from "@/lib/auth";
 import { sendConfirmationEmail, sendClinicNotification } from "@/lib/email";
 
 const schema = z.object({
@@ -11,6 +12,7 @@ const schema = z.object({
     patientPhone: z.string().optional(),
     patientEmail: z.string().email().optional().or(z.literal("")),
     notes: z.string().max(500).optional(),
+    linkToPatientAccount: z.boolean().optional(),
 });
 
 export async function POST(
@@ -21,6 +23,19 @@ export async function POST(
         const { slug } = await params;
         const body = await req.json();
         const data = schema.parse(body);
+
+        let patientUserId: string | null = null;
+        if (data.linkToPatientAccount) {
+            const rawToken = req.cookies.get("access_token")?.value;
+            if (rawToken) {
+                try {
+                    const payload = await verifyAccessToken(rawToken);
+                    if (payload.role === "PATIENT") {
+                        patientUserId = payload.userId;
+                    }
+                } catch {}
+            }
+        }
 
         const tenant = await prisma.tenant.findUnique({
             where: { slug },
@@ -54,9 +69,7 @@ export async function POST(
                 },
             });
 
-            if (conflict) {
-                throw new Error("SLOT_TAKEN");
-            }
+            if (conflict) throw new Error("SLOT_TAKEN");
 
             return tx.appointment.create({
                 data: {
@@ -70,6 +83,7 @@ export async function POST(
                     doctorId: data.doctorId,
                     serviceId: data.serviceId,
                     status: "PENDING",
+                    patientUserId: patientUserId ?? undefined,
                 },
             });
         });
@@ -112,6 +126,7 @@ export async function POST(
                 endTime: appointment.endTime,
                 status: appointment.status,
                 cancelToken: appointment.cancelToken,
+                linkedToAccount: patientUserId !== null,
             },
             { status: 201 }
         );

@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 });
         }
 
-        return NextResponse.json(profile);
+        return NextResponse.json({ ...profile, userId: ctx.userId });
     } catch (e) {
         const msg = e instanceof Error ? e.message : "";
         if (msg === "UNAUTHORIZED") return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 });

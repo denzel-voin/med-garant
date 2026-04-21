@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { CheckCircle, ArrowLeft } from "lucide-react";
+import { CheckCircle, ArrowLeft, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { DoctorCard } from "./DoctorCard";
 import { SlotPicker } from "./SlotPicker";
 import { SymptomAssistant } from "./SymptomAssistant";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface Service {
     id: string;
@@ -34,6 +35,13 @@ interface Slot {
     endTime: string;
 }
 
+interface PatientSession {
+    userId: string;
+    fullName: string;
+    phone: string | null;
+    email: string;
+}
+
 interface Props {
     slug: string;
     doctors: Doctor[];
@@ -53,6 +61,40 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [bookingResult, setBookingResult] = useState<{ id: string } | null>(null);
+
+    // ── Patient session ──────────────────────────────────────────────────────
+    const [patient, setPatient] = useState<PatientSession | null>(null);
+    const [patientLoading, setPatientLoading] = useState(true);
+
+    useEffect(() => {
+        // Single call — /patient/me returns email + fullName + phone
+        fetch("/api/v1/patient/me")
+            .then(async (res) => {
+                if (!res.ok) return; // not logged in — silent, that's fine
+                const me = await res.json();
+                setPatient({
+                    userId: me.userId ?? "",
+                    fullName: me.fullName ?? "",
+                    phone: me.phone ?? null,
+                    email: me.email ?? "",
+                });
+            })
+            .catch(() => { /* network error — continue as guest */ })
+            .finally(() => setPatientLoading(false));
+    }, []);
+
+    // Pre-fill form when patient is known
+    useEffect(() => {
+        if (patient) {
+            setForm((f) => ({
+                ...f,
+                name: patient.fullName || f.name,
+                phone: patient.phone || f.phone,
+                email: patient.email || f.email,
+                consent: true,  // patient already accepted ToS on registration
+            }));
+        }
+    }, [patient]);
 
     function handleAIRecommend(doctorId: string) {
         const doc = doctors.find((d) => d.id === doctorId);
@@ -180,6 +222,14 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
                 >
                     Записаться ещё раз
                 </Button>
+                {patient && (
+                    <Link
+                        href="/me"
+                        className="mt-3 block text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                    >
+                        Посмотреть мои записи →
+                    </Link>
+                )}
             </div>
         );
     }
@@ -306,6 +356,33 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
                         )}
                     </div>
 
+                    {/* Patient session banner */}
+                    {patient ? (
+                        <div className="flex items-center gap-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 px-3 py-2.5">
+                            <UserCheck className="size-4 text-emerald-600 shrink-0" />
+                            <div className="text-sm">
+                                <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                                    {patient.fullName}
+                                </span>
+                                <span className="text-muted-foreground"> — данные подставлены автоматически</span>
+                            </div>
+                            <Link
+                                href="/me"
+                                className="ml-auto text-xs text-emerald-600 hover:underline shrink-0"
+                            >
+                                Мои записи
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-xl px-3 py-2">
+                            <span>Есть аккаунт?</span>
+                            <Link href="/login-patient" className="text-foreground underline underline-offset-2 hover:opacity-80">
+                                Войти
+                            </Link>
+                            <span>— данные заполнятся автоматически</span>
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div className="space-y-1.5">
                             <Label htmlFor="pat-name">ФИО *</Label>
@@ -352,18 +429,21 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
                             />
                         </div>
 
-                        <label className="flex items-start gap-2.5 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="mt-1 size-4 rounded border-border accent-primary"
-                                checked={form.consent}
-                                onChange={(e) => setForm((f) => ({ ...f, consent: e.target.checked }))}
-                            />
-                            <span className="text-xs text-muted-foreground leading-relaxed">
-                Я даю согласие на обработку персональных данных в соответствии с&nbsp;
-                                <span className="underline cursor-pointer">политикой конфиденциальности</span>
-              </span>
-                        </label>
+                        {/* Hide consent checkbox if patient is already logged in (accepted ToS on registration) */}
+                        {!patient && (
+                            <label className="flex items-start gap-2.5 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    className="mt-1 size-4 rounded border-border accent-primary"
+                                    checked={form.consent}
+                                    onChange={(e) => setForm((f) => ({ ...f, consent: e.target.checked }))}
+                                />
+                                <span className="text-xs text-muted-foreground leading-relaxed">
+                                    Я даю согласие на обработку персональных данных в соответствии с&nbsp;
+                                    <span className="underline cursor-pointer">политикой конфиденциальности</span>
+                                </span>
+                            </label>
+                        )}
 
                         {error && (
                             <p className="text-sm text-red-600 bg-red-50 dark:bg-red-950/30 rounded-xl px-3 py-2">
