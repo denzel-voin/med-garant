@@ -170,11 +170,11 @@ export default function PatientsPage() {
 
             {selected && (
                 <div
-                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40"
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
                     onClick={() => setSelected(null)}
                 >
                     <div
-                        className="bg-card rounded-2xl border border-border w-full max-w-lg p-6 space-y-5 max-h-[85vh] overflow-y-auto"
+                        className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-lg p-6 space-y-5 max-h-[85vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}

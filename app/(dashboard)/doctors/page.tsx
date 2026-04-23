@@ -204,8 +204,8 @@ export default function DoctorsPage() {
             )}
 
             {(modal?.mode === "add" || modal?.mode === "edit") && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setModal(null)}>
-                    <div className="bg-card rounded-2xl border border-border w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setModal(null)}>
+                    <div className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-between items-center">
                             <h3 className="font-semibold text-lg">{modal.mode === "add" ? "Новый специалист" : "Редактировать"}</h3>
                             <button onClick={() => setModal(null)} className="text-muted-foreground hover:text-foreground text-xl">×</button>
@@ -288,8 +288,8 @@ export default function DoctorsPage() {
 
             {/* Schedule modal */}
             {modal?.mode === "schedule" && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setModal(null)}>
-                    <div className="bg-card rounded-2xl border border-border w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setModal(null)}>
+                    <div className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-between items-center">
                             <h3 className="font-semibold text-lg">Расписание — {modal.doctor.name}</h3>
                             <button onClick={() => setModal(null)} className="text-muted-foreground hover:text-foreground text-xl">×</button>

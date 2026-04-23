@@ -3,11 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -39,21 +36,26 @@ export default function LoginPage() {
     }
 
     return (
-        <Card className="w-full max-w-md">
-            <CardHeader className="pb-2">
-                <div className="flex items-center gap-2 mb-1">
+        <div className="w-full max-w-sm">
+            <div className="bg-white rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.10)] p-8">
+                <Link href="/" className="flex items-center gap-2 mb-8">
                     <span className="text-2xl">🏥</span>
-                    <span className="font-semibold text-lg">МедГарант</span>
-                </div>
-                <CardTitle>Вход в кабинет</CardTitle>
-                <CardDescription>Введите данные вашей клиники</CardDescription>
-            </CardHeader>
+                    <span className="font-semibold text-[#1D1D1F] text-lg">МедГарант</span>
+                </Link>
 
-            <CardContent>
+                <div className="mb-6">
+                    <h1 className="text-[26px] font-bold text-[#1D1D1F] tracking-tight leading-tight">
+                        Вход в кабинет
+                    </h1>
+                    <p className="text-[#6E6E73] mt-1.5 text-sm">Введите данные вашей клиники</p>
+                </div>
+
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-1.5">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
+                        <label className="text-sm font-medium text-[#1D1D1F]" htmlFor="email">
+                            Email
+                        </label>
+                        <input
                             id="email"
                             type="email"
                             placeholder="clinic@example.com"
@@ -61,12 +63,15 @@ export default function LoginPage() {
                             value={form.email}
                             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                             required
+                            className="w-full h-11 px-4 rounded-xl bg-[#F5F5F7] text-[#1D1D1F] placeholder:text-[#6E6E73] text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition-all"
                         />
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="password">Пароль</Label>
-                        <Input
+                        <label className="text-sm font-medium text-[#1D1D1F]" htmlFor="password">
+                            Пароль
+                        </label>
+                        <input
                             id="password"
                             type="password"
                             placeholder="••••••••"
@@ -74,21 +79,26 @@ export default function LoginPage() {
                             value={form.password}
                             onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                             required
+                            className="w-full h-11 px-4 rounded-xl bg-[#F5F5F7] text-[#1D1D1F] placeholder:text-[#6E6E73] text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition-all"
                         />
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? "Вход..." : "Войти"}
-                    </Button>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full h-11 rounded-xl bg-blue-600 text-white font-medium text-sm hover:bg-blue-700 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 mt-2"
+                    >
+                        {loading ? <><Loader2 className="size-4 animate-spin" /> Входим...</> : "Войти"}
+                    </button>
                 </form>
 
-                <p className="mt-4 text-center text-sm text-muted-foreground">
+                <p className="mt-5 text-center text-sm text-[#6E6E73]">
                     Нет аккаунта?{" "}
-                    <Link href="/register" className="text-foreground underline underline-offset-4 hover:opacity-80">
+                    <Link href="/register" className="text-blue-600 font-medium hover:text-blue-700 transition-colors">
                         Зарегистрировать клинику
                     </Link>
                 </p>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

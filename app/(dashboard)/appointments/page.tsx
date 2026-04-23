@@ -102,13 +102,13 @@ export default function AppointmentsPage() {
     return (
         <div className="space-y-4 max-w-5xl">
             <div className="flex flex-wrap items-center gap-3">
-                <div className="flex rounded-xl border border-border overflow-hidden">
+                <div className="flex rounded-xl bg-[#F5F5F7] p-1">
                     {VIEWS.map((v) => (
                         <button
                             key={v}
                             onClick={() => setView(v)}
                             className={`px-3 py-1.5 text-sm font-medium transition-all ${
-                                view === v ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"
+                                view === v ? "bg-white shadow-sm text-[#1D1D1F]" : "text-[#6E6E73] hover:text-[#1D1D1F]"
                             }`}
                         >
                             {{ day: "День", week: "Неделя", month: "Месяц" }[v]}
@@ -179,11 +179,11 @@ export default function AppointmentsPage() {
 
             {selected && (
                 <div
-                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40"
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
                     onClick={() => setSelected(null)}
                 >
                     <div
-                        className="bg-card rounded-2xl border border-border w-full max-w-md p-6 space-y-4"
+                        className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-md p-6 space-y-4"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-start justify-between">

@@ -43,7 +43,7 @@ export default async function WidgetPage({ params, searchParams }: Props) {
     return (
         <>
             <style>{`
-        :root { --widget-primary: ${primaryColor}; }
+        :root { --primary: ${primaryColor}; }
         body { background: transparent; margin: 0; padding: 0; }
       `}</style>
 

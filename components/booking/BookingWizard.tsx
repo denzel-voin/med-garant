@@ -181,31 +181,23 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
     const stepIndex = { doctor: 0, slot: 1, form: 2, done: 3 }[step];
 
     const wrapClass = compact ? "p-4 space-y-4" : "space-y-6";
+    const colorStyle = primaryColor ? ({ "--primary": primaryColor } as React.CSSProperties) : {};
 
     if (step === "done") {
         return (
-            <div className={cn(wrapClass, "text-center py-8")}>
-                <CheckCircle className="size-14 text-emerald-500 mx-auto" />
-                <h3 className="text-xl font-semibold mt-4">Запись создана!</h3>
-                <p className="text-muted-foreground text-sm mt-2">
-                    {form.email
-                        ? "Подтверждение и напоминание отправлены на ваш email."
-                        : "Ждём вас в назначенное время."}
+            <div className={cn(wrapClass, "text-center py-8")} style={colorStyle}>
+                <div className="size-20 rounded-full bg-emerald-50 flex items-center justify-center mx-auto">
+                    <CheckCircle className="size-10 text-emerald-500" />
+                </div>
+                <h3 className="text-xl font-bold text-[#1D1D1F] mt-5">Запись создана!</h3>
+                <p className="text-[#6E6E73] text-sm mt-2">
+                    {form.email ? "Подтверждение и напоминание отправлены на ваш email." : "Ждём вас в назначенное время."}
                 </p>
                 {selectedDate && selectedSlot && (
-                    <div className="mt-4 rounded-2xl border border-border p-4 text-sm text-left inline-block mx-auto">
-                        <p>
-                            <span className="text-muted-foreground">Врач: </span>
-                            <strong>{selectedDoctor?.name}</strong>
-                        </p>
-                        <p>
-                            <span className="text-muted-foreground">Услуга: </span>
-                            {selectedService?.name}
-                        </p>
-                        <p>
-                            <span className="text-muted-foreground">Дата: </span>
-                            {format(selectedDate, "d MMMM yyyy", { locale: ru })}, {selectedSlot.startTime}
-                        </p>
+                    <div className="mt-5 rounded-2xl bg-[#F5F5F7] p-4 text-sm text-left inline-block mx-auto min-w-[220px] space-y-1">
+                        <p><span className="text-[#6E6E73]">Врач: </span><strong className="text-[#1D1D1F]">{selectedDoctor?.name}</strong></p>
+                        <p><span className="text-[#6E6E73]">Услуга: </span><span className="text-[#1D1D1F]">{selectedService?.name}</span></p>
+                        <p><span className="text-[#6E6E73]">Дата: </span><span className="text-[#1D1D1F]">{format(selectedDate, "d MMMM yyyy", { locale: ru })}, {selectedSlot.startTime}</span></p>
                     </div>
                 )}
                 <Button
@@ -223,10 +215,7 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
                     Записаться ещё раз
                 </Button>
                 {patient && (
-                    <Link
-                        href="/me"
-                        className="mt-3 block text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-                    >
+                    <Link href="/me" className="mt-3 block text-sm text-[#6E6E73] hover:text-blue-600 transition-colors">
                         Посмотреть мои записи →
                     </Link>
                 )}
@@ -235,33 +224,24 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
     }
 
     return (
-        <div className={wrapClass}>
+        <div className={wrapClass} style={colorStyle}>
             {!compact && (
                 <div className="flex gap-2 items-center">
                     {steps.map((s, i) => (
                         <React.Fragment key={s.key}>
-                            <div
-                                className={cn(
-                                    "flex items-center gap-1.5 text-sm",
-                                    i < stepIndex ? "text-primary font-medium" : i === stepIndex ? "text-foreground font-semibold" : "text-muted-foreground"
-                                )}
-                            >
-                                <div
-                                    className={cn(
-                                        "size-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all",
-                                        i < stepIndex
-                                            ? "bg-primary border-primary text-primary-foreground"
-                                            : i === stepIndex
-                                                ? "border-primary text-primary"
-                                                : "border-border text-muted-foreground"
-                                    )}
-                                >
+                            <div className={cn("flex items-center gap-1.5 text-sm", i === stepIndex ? "text-[#1D1D1F] font-semibold" : i < stepIndex ? "text-primary font-medium" : "text-[#6E6E73]")}>
+                                <div className={cn(
+                                    "size-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all",
+                                    i < stepIndex ? "bg-primary border-primary text-primary-foreground"
+                                    : i === stepIndex ? "border-primary text-primary"
+                                    : "border-black/[0.15] text-[#6E6E73]"
+                                )}>
                                     {i < stepIndex ? "✓" : i + 1}
                                 </div>
                                 <span className="hidden sm:block">{s.label}</span>
                             </div>
                             {i < steps.length - 1 && (
-                                <div className={cn("flex-1 h-px", i < stepIndex ? "bg-primary" : "bg-border")} />
+                                <div className={cn("flex-1 h-px transition-colors", i < stepIndex ? "bg-primary" : "bg-black/[0.08]")} />
                             )}
                         </React.Fragment>
                     ))}
@@ -313,13 +293,12 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
                         <ArrowLeft className="size-4" /> Назад
                     </button>
 
-                    <div className="rounded-2xl border border-border p-3 text-sm">
-                        <span className="text-muted-foreground">Врач: </span>
+                    <div className="rounded-2xl bg-[#F5F5F7] p-3 text-sm text-[#1D1D1F]">
                         <strong>{selectedDoctor?.name}</strong>
-                        <span className="mx-2 text-muted-foreground">·</span>
+                        <span className="mx-2 text-[#6E6E73]">·</span>
                         {selectedService?.name}
-                        <span className="mx-2 text-muted-foreground">·</span>
-                        {selectedService?.duration} мин
+                        <span className="mx-2 text-[#6E6E73]">·</span>
+                        <span className="text-[#6E6E73]">{selectedService?.duration} мин</span>
                     </div>
 
                     <SlotPicker
@@ -345,13 +324,13 @@ export function BookingWizard({ slug, doctors, primaryColor, compact }: Props) {
                         <ArrowLeft className="size-4" /> Назад
                     </button>
 
-                    <div className="rounded-2xl border border-border p-3 text-sm space-y-0.5">
-                        <p><span className="text-muted-foreground">Врач: </span><strong>{selectedDoctor?.name}</strong></p>
-                        <p><span className="text-muted-foreground">Услуга: </span>{selectedService?.name}</p>
+                    <div className="rounded-2xl bg-[#F5F5F7] p-3 text-sm space-y-0.5">
+                        <p><span className="text-[#6E6E73]">Врач: </span><strong className="text-[#1D1D1F]">{selectedDoctor?.name}</strong></p>
+                        <p><span className="text-[#6E6E73]">Услуга: </span><span className="text-[#1D1D1F]">{selectedService?.name}</span></p>
                         {selectedDate && selectedSlot && (
                             <p>
-                                <span className="text-muted-foreground">Дата: </span>
-                                {format(selectedDate, "d MMMM yyyy", { locale: ru })}, {selectedSlot.startTime}–{selectedSlot.endTime}
+                                <span className="text-[#6E6E73]">Дата: </span>
+                                <span className="text-[#1D1D1F]">{format(selectedDate, "d MMMM yyyy", { locale: ru })}, {selectedSlot.startTime}–{selectedSlot.endTime}</span>
                             </p>
                         )}
                     </div>

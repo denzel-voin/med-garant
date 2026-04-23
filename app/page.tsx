@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { HomeCatalog } from "@/components/home/HomeCatalog";
 
@@ -14,6 +13,7 @@ export default async function Home({ searchParams }: HomeProps) {
         id: string;
         name: string;
         slug: string;
+        logo: string | null;
         address: string | null;
         latitude?: number | null;
         longitude?: number | null;
@@ -26,55 +26,20 @@ export default async function Home({ searchParams }: HomeProps) {
         }>;
     }> = [];
 
+    const doctorSelect = {
+        where: { isActive: true },
+        select: { id: true, name: true, speciality: true, services: { where: { isActive: true }, select: { id: true } } },
+        orderBy: { name: "asc" as const },
+    };
+
     try {
         tenants = await prisma.tenant.findMany({
-            select: {
-                id: true,
-                name: true,
-                slug: true,
-                address: true,
-                latitude: true,
-                longitude: true,
-                phone: true,
-                doctors: {
-                    where: { isActive: true },
-                    select: {
-                        id: true,
-                        name: true,
-                        speciality: true,
-                        services: {
-                            where: { isActive: true },
-                            select: { id: true },
-                        },
-                    },
-                    orderBy: { name: "asc" },
-                },
-            },
+            select: { id: true, name: true, slug: true, logo: true, address: true, latitude: true, longitude: true, phone: true, doctors: doctorSelect },
             orderBy: { name: "asc" },
         });
     } catch {
-        // Backward compatibility while DB/Prisma client is not migrated yet.
         tenants = await prisma.tenant.findMany({
-            select: {
-                id: true,
-                name: true,
-                slug: true,
-                address: true,
-                phone: true,
-                doctors: {
-                    where: { isActive: true },
-                    select: {
-                        id: true,
-                        name: true,
-                        speciality: true,
-                        services: {
-                            where: { isActive: true },
-                            select: { id: true },
-                        },
-                    },
-                    orderBy: { name: "asc" },
-                },
-            },
+            select: { id: true, name: true, slug: true, logo: true, address: true, phone: true, doctors: doctorSelect },
             orderBy: { name: "asc" },
         });
     }
@@ -93,15 +58,5 @@ export default async function Home({ searchParams }: HomeProps) {
         }))
         .filter((t) => t.doctors.length > 0);
 
-    return (
-        <main className="min-h-screen bg-background">
-            <HomeCatalog initialView={view} clinics={clinics} />
-            <section className="mx-auto max-w-5xl px-4 pb-8 flex items-center justify-between text-sm text-muted-foreground">
-                <p>© {new Date().getFullYear()} МедГарант</p>
-                <Link href="/login" className="hover:text-foreground transition">
-                    Администратор
-                </Link>
-            </section>
-        </main>
-    );
+    return <HomeCatalog initialView={view} clinics={clinics} />;
 }

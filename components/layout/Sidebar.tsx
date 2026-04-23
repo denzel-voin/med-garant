@@ -1,18 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-    Calendar,
-    Users,
-    Briefcase,
-    BarChart2,
-    Settings,
-    LogOut,
-    Activity,
-} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Calendar, Users, Briefcase, BarChart2, Settings, LogOut, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
 
 const NAV = [
     { href: "/appointments", label: "Записи", icon: Calendar },
@@ -34,17 +25,15 @@ export function Sidebar() {
     }
 
     return (
-        <aside className="w-56 shrink-0 border-r border-border bg-card flex flex-col h-full hidden md:flex">
-            {/* Logo */}
-            <div className="px-5 py-5 border-b border-border">
+        <aside className="w-56 shrink-0 border-r border-black/[0.06] bg-white flex flex-col h-full hidden md:flex">
+            <div className="px-5 py-5 border-b border-black/[0.06]">
                 <div className="flex items-center gap-2">
                     <span className="text-xl">🏥</span>
-                    <span className="font-semibold text-base">МедГарант</span>
+                    <span className="font-semibold text-[#1D1D1F] text-[15px]">МедГарант</span>
                 </div>
             </div>
 
-            {/* Nav */}
-            <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
+            <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
                 {NAV.map(({ href, label, icon: Icon }) => {
                     const active = pathname.startsWith(href);
                     return (
@@ -54,22 +43,21 @@ export function Sidebar() {
                             className={cn(
                                 "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all",
                                 active
-                                    ? "bg-primary/10 text-primary"
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    ? "bg-blue-600/[0.08] text-blue-600"
+                                    : "text-[#6E6E73] hover:bg-black/[0.04] hover:text-[#1D1D1F]"
                             )}
                         >
-                            <Icon className={cn("size-4 shrink-0", active ? "text-primary" : "")} />
+                            <Icon className="size-4 shrink-0" />
                             {label}
                         </Link>
                     );
                 })}
             </nav>
 
-            {/* Logout */}
-            <div className="p-3 border-t border-border">
+            <div className="p-3 border-t border-black/[0.06]">
                 <button
                     onClick={handleLogout}
-                    className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                    className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm text-[#6E6E73] hover:bg-black/[0.04] hover:text-[#1D1D1F] transition-all"
                 >
                     <LogOut className="size-4" />
                     Выйти

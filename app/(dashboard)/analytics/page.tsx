@@ -77,15 +77,15 @@ export default function AnalyticsPage() {
 
     return (
         <div className="space-y-6 max-w-5xl">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-[#F5F5F7] rounded-xl p-1">
                 {PERIOD_OPTIONS.map((opt) => (
                     <button
                         key={opt.value}
                         onClick={() => setPeriod(opt.value)}
-                        className={`px-4 py-1.5 rounded-xl text-sm font-medium border transition-all ${
+                        className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
                             period === opt.value
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "border-border text-muted-foreground hover:bg-muted"
+                                ? "bg-white shadow-sm text-[#1D1D1F]"
+                                : "text-[#6E6E73] hover:text-[#1D1D1F]"
                         }`}
                     >
                         {opt.label}
@@ -184,7 +184,7 @@ export default function AnalyticsPage() {
                                                 cy="50%"
                                                 outerRadius={70}
                                                 label={({ name, percent }) =>
-                                                    `${name.length > 12 ? name.slice(0, 12) + "…" : name} ${Math.round(percent * 100)}%`
+                                                    `${(name?.length ?? 0) > 12 ? (name ?? "").slice(0, 12) + "…" : (name ?? "")} ${Math.round((percent ?? 0) * 100)}%`
                                                 }
                                                 labelLine={false}
                                             >

@@ -13,13 +13,13 @@ const PUBLIC_PATHS = [
     "/login-patient",
 ];
 
-function isPublicApi(pathname: string): boolean {
+function isPublicApi(pathname: string, method: string): boolean {
     return (
         pathname.startsWith("/api/v1/auth/") ||
         pathname.startsWith("/api/v1/tenants/") ||
         pathname.startsWith("/api/v1/ai/") ||
         pathname === "/api/v1/appointments/cancel" ||
-        (pathname.match(/^\/api\/v1\/doctors\/[^/]+\/reviews$/) !== null)
+        (method === "GET" && pathname.match(/^\/api\/v1\/doctors\/[^/]+\/reviews$/) !== null)
     );
 }
 
@@ -27,7 +27,7 @@ export async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
     if (PUBLIC_PATHS.includes(pathname)) return NextResponse.next();
-    if (isPublicApi(pathname)) return NextResponse.next();
+    if (isPublicApi(pathname, req.method)) return NextResponse.next();
 
     if (
         pathname.startsWith("/widget/") ||
