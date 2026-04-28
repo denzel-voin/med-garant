@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authService } from "@/services/auth.service";
 import { setAuthCookies } from "@/lib/auth";
-
-const schema = z.object({
-    email: z.string().email(),
-    password: z.string().min(1),
-});
+import { loginSchema as schema } from "@/lib/validators";
 
 export async function POST(req: NextRequest) {
     try {

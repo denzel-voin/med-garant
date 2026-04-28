@@ -43,3 +43,26 @@ export const blockSchema = z.object({
     endTime: z.string().regex(/^\d{2}:\d{2}$/),
     reason: z.string().max(200).optional(),
 });
+
+export const registerSchema = z.object({
+    clinicName: z.string().min(2, "Название клиники слишком короткое"),
+    slug: z
+        .string()
+        .min(3)
+        .max(50)
+        .regex(/^[a-z0-9-]+$/, "Только строчные латинские буквы, цифры и дефис"),
+    email: z.string().email("Некорректный email"),
+    password: z.string().min(8, "Минимум 8 символов"),
+});
+
+export const loginSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(1),
+});
+
+export const registerPatientSchema = z.object({
+    fullName: z.string().min(2, "Укажите ФИО"),
+    email: z.string().email("Некорректный email"),
+    phone: z.string().optional(),
+    password: z.string().min(8, "Минимум 8 символов"),
+});

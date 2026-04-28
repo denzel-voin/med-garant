@@ -3,13 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcrypt";
 import { prisma } from "@/lib/db";
 import { signAccessToken, signRefreshToken, setAuthCookies } from "@/lib/auth";
-
-const schema = z.object({
-    fullName: z.string().min(2, "Укажите ФИО"),
-    email: z.string().email("Некорректный email"),
-    phone: z.string().optional(),
-    password: z.string().min(8, "Минимум 8 символов"),
-});
+import { registerPatientSchema as schema } from "@/lib/validators";
 
 export async function POST(req: NextRequest) {
     try {

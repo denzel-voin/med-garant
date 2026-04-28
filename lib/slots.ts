@@ -7,18 +7,18 @@ export interface Slot {
     endDateTime: Date;
 }
 
-function toMinutes(t: string): number {
+export function toMinutes(t: string): number {
     const [h, m] = t.split(":").map(Number);
     return h * 60 + m;
 }
 
-function fromMinutes(m: number): string {
+export function fromMinutes(m: number): string {
     const h = Math.floor(m / 60).toString().padStart(2, "0");
     const min = (m % 60).toString().padStart(2, "0");
     return `${h}:${min}`;
 }
 
-function combineDateTime(date: Date, time: string): Date {
+export function combineDateTime(date: Date, time: string): Date {
     const [h, m] = time.split(":").map(Number);
     const d = new Date(date);
     d.setHours(h, m, 0, 0);
@@ -37,7 +37,7 @@ function endOfDay(d: Date): Date {
     return r;
 }
 
-function overlaps(s1: Date, e1: Date, s2: Date, e2: Date): boolean {
+export function overlaps(s1: Date, e1: Date, s2: Date, e2: Date): boolean {
     return s1 < e2 && e1 > s2;
 }
 

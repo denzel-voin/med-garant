@@ -2,17 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authService } from "@/services/auth.service";
 import { setAuthCookies } from "@/lib/auth";
-
-const schema = z.object({
-    clinicName: z.string().min(2, "Название клиники слишком короткое"),
-    slug: z
-        .string()
-        .min(3)
-        .max(50)
-        .regex(/^[a-z0-9-]+$/, "Только строчные латинские буквы, цифры и дефис"),
-    email: z.string().email("Некорректный email"),
-    password: z.string().min(8, "Минимум 8 символов"),
-});
+import { registerSchema as schema } from "@/lib/validators";
 
 export async function POST(req: NextRequest) {
     try {
