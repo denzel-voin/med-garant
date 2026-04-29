@@ -200,22 +200,11 @@ export function HomeCatalog({
             {/* ── Hero ── */}
             <section className="mx-auto max-w-2xl px-4 pt-16 pb-12 text-center">
                 <h1 className="text-[52px] font-bold tracking-tight text-[#1D1D1F] leading-[1.08] mb-4">
-                    Запись к врачу<br />онлайн
+                    Запись к врачу онлайн
                 </h1>
                 <p className="text-xl text-[#6E6E73] mb-8 leading-relaxed">
-                    Найдите нужного специалиста<br className="hidden sm:block" /> и запишитесь за минуту
+                    Найдите нужного специалиста и запишитесь за минуту
                 </p>
-
-                <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-[#6E6E73] pointer-events-none" />
-                    <input
-                        type="text"
-                        placeholder="Клиника, врач, специальность или адрес..."
-                        value={query}
-                        onChange={(e) => { setQuery(e.target.value); resetAi(); }}
-                        className="w-full h-14 pl-12 pr-4 rounded-2xl bg-white border border-black/[0.08] shadow-[0_2px_12px_rgba(0,0,0,0.06)] text-[#1D1D1F] placeholder:text-[#6E6E73] text-base focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400/60 transition-all"
-                    />
-                </div>
             </section>
 
             {/* ── Content ── */}
@@ -330,6 +319,17 @@ export function HomeCatalog({
                             )}
                         </div>
                     )}
+                </div>
+
+                <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-[#6E6E73] pointer-events-none" />
+                    <input
+                        type="text"
+                        placeholder="Клиника, врач, специальность или адрес..."
+                        value={query}
+                        onChange={(e) => { setQuery(e.target.value); resetAi(); }}
+                        className="w-full h-14 pl-12 pr-4 rounded-2xl bg-white border border-black/[0.08] shadow-[0_2px_12px_rgba(0,0,0,0.06)] text-[#1D1D1F] placeholder:text-[#6E6E73] text-base focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400/60 transition-all"
+                    />
                 </div>
 
                 {/* Map */}

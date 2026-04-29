@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, LogOut, X, Calendar, Users, Briefcase, BarChart2, Settings, Activity } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -24,10 +24,30 @@ const NAV = [
     { href: "/settings", label: "Настройки", icon: Settings },
 ];
 
+const ROLE_LABELS: Record<string, string> = {
+    OWNER: "Владелец",
+    ADMIN: "Администратор",
+    DOCTOR: "Врач",
+};
+
+interface Me {
+    name: string;
+    role: string;
+    clinicName: string;
+}
+
 export function DashboardHeader() {
     const pathname = usePathname();
     const router = useRouter();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [me, setMe] = useState<Me | null>(null);
+
+    useEffect(() => {
+        fetch("/api/v1/me")
+            .then((r) => r.ok ? r.json() : null)
+            .then((data) => { if (data) setMe(data); })
+            .catch(() => {});
+    }, []);
 
     const title = Object.entries(PAGE_TITLES).find(([k]) => pathname.startsWith(k))?.[1] ?? "МедГарант";
 
@@ -47,6 +67,20 @@ export function DashboardHeader() {
                     <Menu className="size-5 text-[#1D1D1F]" />
                 </button>
                 <h1 className="font-semibold text-[15px] text-[#1D1D1F]">{title}</h1>
+
+                {me && (
+                    <div className="ml-auto flex items-center gap-2.5">
+                        <div className="text-right hidden sm:block">
+                            <p className="text-xs font-medium text-[#1D1D1F] leading-tight">{me.name}</p>
+                            <p className="text-[11px] text-[#6E6E73] leading-tight">
+                                {ROLE_LABELS[me.role] ?? me.role} · {me.clinicName}
+                            </p>
+                        </div>
+                        <div className="size-8 rounded-full bg-blue-600/10 flex items-center justify-center text-blue-600 text-xs font-semibold shrink-0">
+                            {me.name.charAt(0).toUpperCase()}
+                        </div>
+                    </div>
+                )}
             </header>
 
             {mobileOpen && (
@@ -55,7 +89,7 @@ export function DashboardHeader() {
                     <aside className="absolute left-0 top-0 bottom-0 w-64 bg-white shadow-[4px_0_24px_rgba(0,0,0,0.08)] flex flex-col">
                         <div className="px-5 py-5 border-b border-black/[0.06] flex items-center gap-2">
                             <span className="text-xl">🏥</span>
-                            <span className="font-semibold text-[#1D1D1F]">МедГарант</span>
+                            <span className="font-semibold text-[#1D1D1F]">{me?.clinicName ?? "МедГарант"}</span>
                             <button
                                 className="ml-auto size-7 flex items-center justify-center rounded-full hover:bg-black/[0.04] transition-colors"
                                 onClick={() => setMobileOpen(false)}
@@ -85,6 +119,12 @@ export function DashboardHeader() {
                             })}
                         </nav>
                         <div className="p-3 border-t border-black/[0.06]">
+                            {me && (
+                                <div className="px-3 py-2 mb-1">
+                                    <p className="text-xs font-medium text-[#1D1D1F]">{me.name}</p>
+                                    <p className="text-[11px] text-[#6E6E73]">{ROLE_LABELS[me.role] ?? me.role}</p>
+                                </div>
+                            )}
                             <button
                                 onClick={handleLogout}
                                 className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm text-[#6E6E73] hover:bg-black/[0.04] hover:text-[#1D1D1F] transition-all"

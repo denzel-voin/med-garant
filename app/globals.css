@@ -128,3 +128,98 @@
     @apply font-sans;
   }
 }
+
+/* react-big-calendar overrides */
+.rbc-wrapper .rbc-calendar {
+  font-family: inherit;
+}
+.rbc-wrapper .rbc-toolbar {
+  display: none;
+}
+.rbc-wrapper .rbc-header {
+  padding: 8px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6e6e73;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9f9f9;
+}
+.rbc-wrapper .rbc-today {
+  background-color: #eff6ff;
+}
+.rbc-wrapper .rbc-off-range-bg {
+  background-color: #fafafa;
+}
+.rbc-wrapper .rbc-date-cell {
+  padding: 4px 6px;
+  font-size: 12px;
+}
+.rbc-wrapper .rbc-date-cell.rbc-now > a {
+  background: #2563eb;
+  color: #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.rbc-wrapper .rbc-event {
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  padding: 2px 6px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.rbc-wrapper .rbc-event:focus {
+  outline: none;
+}
+.rbc-wrapper .rbc-event-label {
+  font-size: 10px;
+  opacity: 0.75;
+}
+.rbc-wrapper .rbc-show-more {
+  font-size: 11px;
+  color: #2563eb;
+  font-weight: 500;
+  background: none;
+  padding: 1px 6px;
+}
+.rbc-wrapper .rbc-time-slot {
+  font-size: 11px;
+}
+.rbc-wrapper .rbc-time-gutter .rbc-timeslot-group {
+  min-height: 60px;
+}
+.rbc-wrapper .rbc-timeslot-group {
+  min-height: 60px;
+}
+.rbc-wrapper .rbc-current-time-indicator {
+  background-color: #ef4444;
+  height: 2px;
+}
+.rbc-wrapper .rbc-current-time-indicator::before {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+  position: absolute;
+  left: -5px;
+  top: -4px;
+}
+.rbc-wrapper .rbc-time-header-content {
+  border-left: 1px solid #e5e7eb;
+}
+.rbc-wrapper .rbc-day-bg + .rbc-day-bg,
+.rbc-wrapper .rbc-header + .rbc-header {
+  border-left: 1px solid #e5e7eb;
+}
+.rbc-wrapper .rbc-month-row + .rbc-month-row {
+  border-top: 1px solid #e5e7eb;
+}
+.rbc-wrapper .rbc-month-view,
+.rbc-wrapper .rbc-time-view {
+  border: none;
+}

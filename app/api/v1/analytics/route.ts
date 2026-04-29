@@ -23,12 +23,13 @@ export async function GET(req: NextRequest) {
                 startTime: { gte: from, lte: to },
             },
             include: {
-                service: { select: { id: true, name: true } },
+                service: { select: { id: true, name: true, price: true } },
                 doctor: { select: { id: true, name: true } },
             },
         });
 
         const total = appointments.length;
+        const pending = appointments.filter((a) => a.status === "PENDING").length;
         const confirmed = appointments.filter((a) => a.status === "CONFIRMED").length;
         const completed = appointments.filter((a) => a.status === "COMPLETED").length;
         const cancelled = appointments.filter((a) =>
@@ -38,6 +39,11 @@ export async function GET(req: NextRequest) {
 
         const finalized = completed + noShow;
         const noShowRate = finalized > 0 ? Math.round((noShow / finalized) * 100) : 0;
+
+        const revenue = appointments
+            .filter((a) => a.status === "COMPLETED" && a.service.price != null)
+            .reduce((sum, a) => sum + (a.service.price ?? 0), 0);
+        const avgCheck = completed > 0 ? Math.round(revenue / completed) : 0;
 
         const days = eachDayOfInterval({ start: from, end: to });
         const bookingsByDay = days.map((day) => {
@@ -75,7 +81,7 @@ export async function GET(req: NextRequest) {
         });
 
         return NextResponse.json({
-            summary: { total, confirmed, completed, cancelled, noShow, noShowRate },
+            summary: { total, pending, confirmed, completed, cancelled, noShow, noShowRate, revenue, avgCheck },
             bookingsByDay,
             topServices,
             doctorWorkload,

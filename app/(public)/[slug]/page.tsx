@@ -130,7 +130,7 @@ export default async function ClinicPage({ params }: Props) {
 
                         <section>
                             <h2 className="text-xl font-semibold mb-4">Отзывы о специалистах</h2>
-                            <DoctorsWithReviews doctors={doctorsWithRating} />
+                            <DoctorsWithReviews doctors={doctorsWithRating} isPatient={isPatient} />
                         </section>
                     </>
                 )}

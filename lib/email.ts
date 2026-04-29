@@ -1,15 +1,18 @@
 import nodemailer from "nodemailer";
 
+const port = parseInt(process.env.SMTP_PORT ?? "465");
+
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST ?? "smtp.mailtrap.io",
-    port: parseInt(process.env.SMTP_PORT ?? "587"),
+    host: process.env.SMTP_HOST ?? "smtp.yandex.ru",
+    port,
+    secure: port === 465,
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
-});
+} as Parameters<typeof nodemailer.createTransport>[0]);
 
-const FROM = process.env.SMTP_FROM ?? "noreply@medgarant.ru";
+const FROM = process.env.SMTP_FROM ?? process.env.SMTP_USER ?? "noreply@medgarant.ru";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 function formatDate(d: Date): string {

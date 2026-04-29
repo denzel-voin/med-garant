@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Star, Stethoscope, UserCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { RatingBadge, StarRating } from "./StarRating";
+import { ChevronDown, ChevronUp, Star, Stethoscope } from "lucide-react";
+import { RatingBadge } from "./StarRating";
 import { ReviewsList } from "./ReviewsList";
 import { ReviewForm } from "./ReviewForm";
 import { Button } from "@/components/ui/button";
@@ -20,11 +19,13 @@ interface Doctor {
 
 interface Props {
     doctors: Doctor[];
+    isPatient?: boolean;
 }
 
-export function DoctorsWithReviews({ doctors }: Props) {
+export function DoctorsWithReviews({ doctors, isPatient = false }: Props) {
     const [openDoctor, setOpenDoctor] = useState<string | null>(null);
     const [reviewTarget, setReviewTarget] = useState<{ doctorId: string; doctorName: string } | null>(null);
+    const [showAuthPrompt, setShowAuthPrompt] = useState(false);
     const [refreshKeys, setRefreshKeys] = useState<Record<string, number>>({});
 
     function toggleDoctor(id: string) {
@@ -86,28 +87,22 @@ export function DoctorsWithReviews({ doctors }: Props) {
                                         refreshKey={refreshKeys[doctor.id] ?? 0}
                                     />
 
-                                    <div className="pt-2 border-t border-border flex items-center gap-3">
+                                    <div className="pt-2 border-t border-border">
                                         <Button
                                             size="sm"
                                             variant="outline"
                                             className="gap-1.5"
-                                            onClick={() =>
-                                                setReviewTarget({
-                                                    doctorId: doctor.id,
-                                                    doctorName: doctor.name,
-                                                })
-                                            }
+                                            onClick={() => {
+                                                if (isPatient) {
+                                                    setReviewTarget({ doctorId: doctor.id, doctorName: doctor.name });
+                                                } else {
+                                                    setShowAuthPrompt(true);
+                                                }
+                                            }}
                                         >
                                             <Star className="size-3.5" />
                                             Оставить отзыв
                                         </Button>
-                                        <Link
-                                            href="/login-patient"
-                                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                                        >
-                                            <UserCheck className="size-3.5" />
-                                            Войти как пациент
-                                        </Link>
                                     </div>
                                 </div>
                             )}
@@ -123,6 +118,48 @@ export function DoctorsWithReviews({ doctors }: Props) {
                     onCancel={() => setReviewTarget(null)}
                     onSuccess={() => handleReviewSuccess(reviewTarget.doctorId)}
                 />
+            )}
+
+            {showAuthPrompt && (
+                <div
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40"
+                    onClick={() => setShowAuthPrompt(false)}
+                >
+                    <div
+                        className="bg-card rounded-2xl border border-border w-full max-w-sm p-6 space-y-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <h3 className="font-semibold text-lg">Войдите, чтобы оставить отзыв</h3>
+                                <p className="text-sm text-muted-foreground mt-0.5">
+                                    Отзывы могут оставлять только зарегистрированные пациенты
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowAuthPrompt(false)}
+                                className="text-muted-foreground hover:text-foreground text-xl leading-none ml-3 shrink-0"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Link
+                                href="/login-patient"
+                                className="inline-flex items-center justify-center h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                            >
+                                Войти
+                            </Link>
+                            <Link
+                                href="/register-patient"
+                                className="inline-flex items-center justify-center h-10 px-4 rounded-xl border border-border text-sm font-medium hover:bg-muted/50 transition-colors"
+                            >
+                                Зарегистрироваться
+                            </Link>
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     );
